@@ -5,6 +5,18 @@ KR COVID-19 Informative Repository (Kangwon National University, CSE)
 - Node.js에서 손쉽게 사용가능한 COVID-19(코로나바이러스-19) API 패키지
 - 강원대학교 SW학습공동체 오픈소스 프로젝트 팀 **Bear Soup**
 
+# 사용법
+```javascript
+var covid = require('covid19-kr'); // 또는 require('.')으로 현재 폴더 내 파일 불러오기
+
+var options =  {
+    apiKey: "<base64 apiKey>"
+};
+
+var covidInstance = covid.Covid19KR(options);
+```
+- COVID-19 인스턴스 생성 후 getCovidKRStatus와 getCovidKRByState로 데이터 Fetch
+
 # 기여
 - [jungin500](https://github.com/jungin500): [Node.js 및 npm 레지스트리 스터디 및 연구](https://github.com/jungin500/covid19-packaging-study)
 - [qwlake](https://github.com/qwlake): [Node.js 및 npm 레지스트리 스터디 및 연구](https://github.com/qwlake/study-covid-npm)

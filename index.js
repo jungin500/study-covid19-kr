@@ -1,45 +1,78 @@
-﻿const parseString = require('xml2js').parseString;
-const request = require('request');
-const secret = require('./secret.json');
-const express = require('express');
-const app = express();
+﻿'use strict'
 
-function requestCovid(url, queryParams) {
-    return new Promise(
-        function(resolve, reject) {
-            let header = '';
-            let body = '';
-            request.get(url+queryParams, (covidErr, covidRes, covidBody)=> {
-                if(covidErr) {
-                    console.log(`covidErr => ${covidErr}`)
-                } else if(covidRes.statusCode == 200) {
-                    parseString(covidBody, function(parseErr, parseRes) {
-                        let response = parseRes.response;
-                        header = response.header;
-                        body = response.body;
-                        resolve(body);
-                    }); 
-                }
-            })
-        }
-    )
-}
+/**
+ * covid19-kr
+ * 
+ * @author LimeOrangePie <ji5489@gmail.com>
+ * @author qwlake <qwlake@gmail.com>
+ * @license GPLv3
+ */
 
-app.get('/', function(req, res) {
-    let url = 'http://openapi.data.go.kr/openapi/service/rest/Covid19/getCovid19InfStateJson'; /*URL*/
-    let queryParams = '?' + encodeURIComponent('ServiceKey') + '='+secret.covid19; /*Service Key*/
-    queryParams += '&' + encodeURIComponent('pageNo') + '=' + encodeURIComponent('1'); /*페이지 번호*/
-    queryParams += '&' + encodeURIComponent('numOfRows') + '=' + encodeURIComponent('10'); /*한 페이지 결과 수*/
-    queryParams += '&' + encodeURIComponent('startCreateDt') + '=' + encodeURIComponent('20200310'); /*데이터 생성일 시작범위*/
-    queryParams += '&' + encodeURIComponent('endCreateDt') + '=' + encodeURIComponent('20200315'); /*데이터 생성일 종료범위*/
+const axios = require('axios')
+const moment = require('moment')
 
-    let getCovid = async function() { 
-        res.json( await requestCovid(url, queryParams));
+module.exports = {
+    Covid19KR: function(options) {
+        return new Covid19(options)
     }
-    getCovid();
-});
+} 
 
-var port = 3000;
-app.listen(port, function(){
-    console.log('server on! http://localhost:'+port);
-});
+class Covid19 {
+    static RequestInfo = Object.freeze({
+        Path: {
+            getCovid19InfStateJson: "http://openapi.data.go.kr/openapi/service/rest/Covid19/getCovid19InfStateJson",
+            getCovid19SidoInfStateJson: "http://openapi.data.go.kr/openapi/service/rest/Covid19/getCovid19SidoInfStateJson"
+        }
+    })
+
+    constructor(options) {
+        this.apiKey = options.apiKey
+        this.numOfRows = 10
+    }
+
+    async getCovidKRStatus(rows = 10, pageNo = 1, startDate = moment().subtract(1, 'month').format('yyyyMMDD'),
+        endDate = moment().format('yyyyMMDD')) {
+
+        return this.requestCovid(
+            Covid19.RequestInfo.Path.getCovid19InfStateJson,
+            rows,
+            pageNo,
+            startDate,
+            endDate
+        )
+    }
+
+    async getCovidKRByState(rows = 10, pageNo = 1, startDate = moment().subtract(1, 'month').format('yyyyMMDD'),
+        endDate = moment().format('yyyyMMDD')) {
+            
+        return this.requestCovid(Covid19.RequestInfo.Path.getCovid19SidoInfStateJson,
+            rows,
+            pageNo,
+            startDate,
+            endDate
+        )
+    }
+
+    async requestCovid(requestBaseURL, rows, pageNo, startDate, endDate) {
+        const requestURL = requestBaseURL +
+            `?serviceKey=${this.apiKey}&numOfRows=${rows}` + 
+            `&pageNo=${pageNo}&startCreateDt=${startDate}&endCreateDt=${endDate}`
+
+        const response = await axios.get(requestURL)
+        const responseHeader = response.data.response.header
+        if (responseHeader.resultCode != '00')
+            throw new Error(`Got invalid response(${responseHeader.resultCode}): ${responseHeader.resultMsg}`)
+
+        if (!(response.data && response.data.response && response.data.response.body &&
+            response.data.response.body.totalCount != undefined && response.data.response.body.items)) {
+            this.__errorBody__ = response.data
+            throw new Error(`No valid response body found - check response data with Covid19.__errorBody__ !`)
+        }
+        const responseBody = response.data.response.body
+
+        // const itemCount = responseBody.totalCount
+        // const itemList = responseBody.items.item
+
+        return responseBody
+    }
+}

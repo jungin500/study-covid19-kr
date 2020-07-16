@@ -11,14 +11,13 @@
     "url": "git+https://github.com/bear-soup/covid19-kr.git"
   },
   "author": "",
-  "license": "ISC",
+  "license": "GPLv3",
   "bugs": {
     "url": "https://github.com/bear-soup/covid19-kr/issues"
   },
   "homepage": "https://github.com/bear-soup/covid19-kr#readme",
   "dependencies": {
-    "express": "^4.17.1",
-    "request": "^2.88.2",
-    "xml2js": "^0.4.23"
+    "axios": "^0.19.2",
+    "moment": "^2.27.0"
   }
 }
